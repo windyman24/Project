@@ -12,24 +12,7 @@ void setup(void)
 {
   ads.begin();
   Serial.begin(115200);
-  mySerial1.begin(115200);
-  //connet wifi
-  // AT+CWMODE=1
-  // AT+CWJAP="Wei","12345678"
-  //AT+CIPMUX=1
-  // AT+CIPSTART=4,"TCP","192.168.43.57",8087
-  // AT+CIPSEND=4,25
-//  mySerial1.print("AT\r\n");
-//  delay(5000);
-//  mySerial1.print("AT+CWMODE=1\r\n");
-//  delay(5000);
-//  mySerial1.print("AT+CWJAP=\"Wei\",\"12345678\"\r\n");
-//  delay(8000); 
-//  mySerial1.print("AT+CIPMUX=1\r\n");
-//  delay(5000);
-//  mySerial1.print("AT+CIPSTART=4,\"TCP\",\"163.18.59.233\",8899\r\n"); 
-//  delay(5000);
-  
+  mySerial1.begin(115200); 
   
 }
 
