@@ -4,7 +4,7 @@
 #include "sensor.h"
 #include "Light_indication.h"
 
-#define check_connect_time 1000
+#define check_connect_time 5000
 #define send_keeplive_time 1000
 
 Light_Sensor sensor(2, 5, 6);
@@ -32,9 +32,9 @@ unsigned long Sensor3_previousMillis = 0;
 const long Sensor3_interval = 100;
 
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};//change this MAC Address the last byte 21->E1,22->E2,,23->E3,24->E4
-IPAddress ip(192,168,2,168);
-IPAddress myDns(192, 168,2, 1);
-IPAddress gateway(192, 168,2, 254);
+IPAddress ip(192, 168, 2, 169);
+IPAddress myDns(192, 168, 2, 1);
+IPAddress gateway(192, 168, 2, 254);
 IPAddress subnet(255, 255, 255, 0);
 EthernetServer server(8000);// telnet defaults to port 8000
 //IPAddress ip(10, 0, 0, 22);
@@ -42,7 +42,7 @@ EthernetServer server(8000);// telnet defaults to port 8000
 //IPAddress gateway(10, 0, 0, 10);
 //IPAddress subnet(255, 255, 255, 0);
 EthernetClient clients;
-unsigned long previousMillis = 0;        
+unsigned long previousMillis = 0;
 String S1data = "S11";
 String S2data = "S21";
 String S3data = "S31";
@@ -51,9 +51,11 @@ void Ethernet_init(void);
 bool connect_flag = 0;
 void setup()
 {
-  //Serial.begin(115200);
+  Serial.begin(115200);
+  Serial.println("Restart");
   Ethernet_init();
-  wdt_enable(WDTO_4S);
+  wdt_enable(WDTO_8S);
+
 }
 void loop()
 {
@@ -153,6 +155,7 @@ void Ethernet_init()
     Light_indication.disconnect();
     while (true) {
       delay(1); // do nothing, no point running without Ethernet hardware
+      wdt_reset();
     }
   }
   if (Ethernet.linkStatus() == LinkOFF) {
@@ -174,17 +177,22 @@ int no_response = 0;
 void keeplive()
 {
   unsigned long currentMillis = millis();
-  if (currentMillis - send_keeplive_time >= send_keeplive_time && connect_flag)
+  if (currentMillis - send_keeplive_previousMillis >= send_keeplive_time)
   {
-    //Serial.println("Enter Keeplive time for check ");
     send_keeplive_previousMillis = currentMillis;
-    clients.println("S000000");
+    //Serial.println("Enter Keeplive time for check ");
+    if (no_response == 0)
+    {
+      send_keeplive_previousMillis = currentMillis;
+      clients.println("S000000");
+//      wdt_reset();
+    }
   }
 }
 void check_connect()
 {
   unsigned long currentMillis = millis();
-   if (currentMillis - check_connect_previousMillis >= check_connect_time)
+  if (currentMillis - check_connect_previousMillis >= check_connect_time)
   {
     check_connect_previousMillis = currentMillis;
     if (clients && clients.available() > 0)
@@ -193,12 +201,17 @@ void check_connect()
       // read bytes from a client
       byte buffer[2];
       clients.read(buffer, 2);
-        //Serial.println("Recive:A");
-        //Serial.println("wait_flag = 0");
+      //Serial.println("Recive:A");
+      //Serial.println("wait_flag = 0");
+//      if (buffer[0] == 'A')
+//      {
         wait_flag = 0;
         no_response = 0;
         keep_live_flag = true;
         clear_recive_buf();
+        wdt_reset();
+//      }
+
     }
     else if (!clients.connected())
     {
@@ -206,7 +219,7 @@ void check_connect()
       connect_flag = false;
       clients.stop();
       Light_indication.disconnect();
-      
+
     }
     else
     {
@@ -221,6 +234,7 @@ void check_connect()
         Light_indication.disconnect();
         wait_to_restart = 0;
         connect_flag = false;
+        no_response = 1;
       }
     }
   }
